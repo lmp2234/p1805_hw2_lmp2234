@@ -176,7 +176,11 @@ bakes_df <- read_csv("./data/bakes.csv") %>%
 results_df <- read_csv("./data/results.csv", skip = 2) %>%
   janitor::clean_names() %>%
   relocate(baker) %>%
-  mutate(result = ifelse(result %in% c("Winner", "Star Baker"), "TRUE", "FALSE")) 
+  mutate(result = str_trim(result),  
+         result = case_when(
+           str_to_title(result) %in% c("Winner", "Star Baker") ~ "TRUE",  
+           TRUE ~ "FALSE"
+         ))
 
 head(bakers_df, 5)
 head(bakes_df, 5)
@@ -199,11 +203,24 @@ head(combined_df, 5)
   
 ```
 
-##Data Cleaning Process##
+**Data Cleaning Process**
 I cleaned the data by first reading in the data files and cleaned the variable names. For the bakers_df I removed the columns that corresponded to baker age, baker occupation, and hometown.I also renamed the baker_name variable to baker because the other two datasets had the name as baker. For bakes_df, I relocated baker column so that it was the first column. i then removed signature bake and show stopper since they were not relevant. For results_df, I skipped the first two rows since they did not contain any information and the column names started on the third row. I also relocated the baker column to be first. I then mutated the result variable so that if the column said Winner or Star Baker, then it was coded as True, or else it was coded as false. This made it easier to create a table showing star baker/winner of season 5.I merged the datasets with left_join. i first joined the bakes and results datasets as they shared baker, series, and episode variables in common. I then merged this with bakers_df by baker and series. I selected the column names in order of appearance. This yielded a dataset that contained information on the baker name, series they appeared in, episode they appeared in, number of technical challenges, and the results of the episode. 
 
-##Exporting the Data##
+**Exporting the Data**
 ```{r}
 write_csv(combined_df, "./data/combined_df.csv")
+```
+
+**Creating table showing star baker or winner of season 5 through 10. **
+```{r}
+
+star_table <- combined_df %>%
+  filter(series >= 5 & series <= 10) %>%
+  filter(result == "TRUE") %>%
+  select(series, episode, baker) %>%
+  arrange(series, episode)
+
+print(star_table)
+
 ```
 
