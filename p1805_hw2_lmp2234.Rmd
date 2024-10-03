@@ -9,22 +9,172 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+##Question 1
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+library(tidyverse)
+library(dplyr)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+##Reading in the NYC Transit Subway File
+```{r}
+subway_df = read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
+subway_df = janitor::clean_names(subway_df)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##Keeping Certain Variables and Changing Entry to a Logical Variable 
+```{r}
+subway_df <-subway_df %>%
+select(line:vending,ada)
+
+subway_df = subway_df %>%
+  mutate(entry_logical = case_match(entry,
+                                    "YES" ~ TRUE,
+                                    "NO" ~ FALSE))
+
+subway_df
+
+skimr::skim(subway_df)
+```
+#The NYC Subway dataset contains 1868 rows and 21 columns after retaining specific variable names and adding an additional variable "entry_logical" that converted the entry variable from character to logical. The dataset contains information about subway lines, station names, latitude/longitude, the routes the subways take, entrance type, whether the station allows entry or is exit only, whether the station has vending, and whether it is ADA compliant. The variable names were cleaned using clean_names from the janitor function, only columns "line" through "vending" and "ada" were retained, and case_match was used to convert entry to a logical variable. This data is tidy since each variable has a column name and the observations are organized by rows. Only relevant information about subway lines, routes, and station features are retained.  
+
+
+##How Many Distinct Stations Are There
+```{r}
+distinct_stations <- subway_df %>%
+  distinct(station_name, line) %>%
+  nrow()
+
+distinct_stations
+
+```
+
+##How Many Stations are ADA Compliant
+```{r}
+ada_compliant_stations <- subway_df %>%
+  filter(ada == TRUE) %>%
+  distinct (station_name) %>%
+   nrow()
+
+ada_compliant_stations
+
+```
+
+##What proportion of station entrances/exits without vending allow entrance
+
+```{r}
+proportion_entry <- subway_df %>%
+  filter (vending == "No")  %>%
+   summarise(proportion = mean(entry_logical, na.rm = TRUE)) 
+
+proportion_entry
+
+```
+```{r}
+subway_df <- subway_df %>%
+  mutate(across(starts_with("route"), as.character))
+
+subway_long <- subway_df %>%
+  pivot_longer(
+    route1:route11, 
+    names_to = "route_name", 
+    values_to = "route_number")
+
+subway_long
+
+a_stations <- subway_long %>%
+  filter(route_number=="A") %>%  
+  distinct(station_name, line) %>%
+  nrow()
+
+a_stations
+
+ada_compliant <-subway_long  %>%
+  filter (route_number=="A", ada == TRUE) %>%
+  distinct(station_name, line) %>%
+  nrow()
+
+ada_compliant
+
+```
+
+
+##Question 2
+
+```{r}
+library(readxl)
+
+
+mrtrashwheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
+                               sheet = "Mr. Trash Wheel", 
+                               skip = 1) |> 
+  janitor::clean_names() |> 
+  drop_na(dumpster) |> 
+  mutate(sports_balls = as.integer(round(sports_balls))) |> 
+  select(-x15, -x16)  
+
+head(mrtrashwheel_df, 5)
+
+```
+```{r}
+professortrashwheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
+                               sheet = "Professor Trash Wheel", 
+                               skip = 1) |> 
+  janitor::clean_names() |> 
+  drop_na(dumpster)|>  
+  mutate(year = as.character(year))
+
+head(professortrashwheel_df, 5)
+```
+```{r}
+gwynndatrashwheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
+                               sheet = "Gwynnda Trash Wheel", 
+                               skip = 1) |> 
+  janitor::clean_names() |> 
+  drop_na(dumpster) |> 
+mutate(year = as.character(year))
+
+head(gwynndatrashwheel_df, 5)
+```
+
+##Combining the datasets
+```{r}
+mrtrashwheel_df <- mrtrashwheel_df |> 
+  mutate(source = "Mr. Trash Wheel") 
+
+professortrashwheel_df <- professortrashwheel_df |> 
+  mutate(source = "Professor Trash Wheel") 
+
+gwynndatrashwheel_df <- gwynndatrashwheel_df |> 
+  mutate(source = "Gwynndat Trash Wheel")
+
+combined_df = bind_rows(mrtrashwheel_df, professortrashwheel_df, gwynndatrashwheel_df)
+
+combined_df
+```
+
+The `combined_df` dataset consists of `r nrow(combined_df)` observations and 15 variables from three datasheets: Mr. Trash Wheel, Gwynnda Trash Wheel, and Professor Trash Wheel. The `Mr. Trash Wheel` dataset has `r nrow(mrtrashwheel_df)`  observations. The `Professor Trash Wheel` dataset has `r nrow(professortrashwheel_df)` observations. The `Gwynnda Trash Wheel` dataset has `r nrow(gwynndatrashwheel_df)` observations. Key variables in this set include the `date` of trash collection, the `weight_tons` which notes the weight of the trash collected, and the contents of what was collected in the trash such as number of `cigarette_butts`. The total weight of trash collected by `Professor Trash Wheel` is `r sum(professortrashwheel_df$weight_tons, na.rm = TRUE)` pounds. In June 2022, `Gwynnda Trash Wheel` collected `r format(sum(gwynndatrashwheel_df$cigarette_butts[gwynndatrashwheel_df$month == "June" & gwynndatrashwheel_df$year == 2022], na.rm = TRUE), big.mark = ",")` cigarette butts. 
+
+##Question 3 
+
+
+
+```{r}
+
+bakers_df <- read_csv("./data/bakers.csv") %>%
+  janitor::clean_names() %>%
+  rename(baker = baker_name)
+
+bakes_df <- read_csv("./data/bakes.csv") %>%
+  janitor::clean_names()
+
+results_df <- read_csv("./data/results.csv", skip = 2) %>%
+  janitor::clean_names()
+
+head(bakers_df, 5)
+head(bakes_df, 5)
+head(results_df, 5)
+
+
+
+
