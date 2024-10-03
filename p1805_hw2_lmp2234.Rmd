@@ -6,23 +6,24 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+
 ```
 
-##Question 1
+##Question 1##
 
 ```{r}
 library(tidyverse)
 library(dplyr)
 ```
 
-##Reading in the NYC Transit Subway File
+##Reading in the NYC Transit Subway File##
 ```{r}
 subway_df = read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
 subway_df = janitor::clean_names(subway_df)
 ```
 
-##Keeping Certain Variables and Changing Entry to a Logical Variable 
+##Keeping Certain Variables and Changing Entry to a Logical Variable## 
 ```{r}
 subway_df <-subway_df %>%
 select(line:vending,ada)
@@ -39,7 +40,7 @@ skimr::skim(subway_df)
 #The NYC Subway dataset contains 1868 rows and 21 columns after retaining specific variable names and adding an additional variable "entry_logical" that converted the entry variable from character to logical. The dataset contains information about subway lines, station names, latitude/longitude, the routes the subways take, entrance type, whether the station allows entry or is exit only, whether the station has vending, and whether it is ADA compliant. The variable names were cleaned using clean_names from the janitor function, only columns "line" through "vending" and "ada" were retained, and case_match was used to convert entry to a logical variable. This data is tidy since each variable has a column name and the observations are organized by rows. Only relevant information about subway lines, routes, and station features are retained.  
 
 
-##How Many Distinct Stations Are There
+##How Many Distinct Stations Are There##
 ```{r}
 distinct_stations <- subway_df %>%
   distinct(station_name, line) %>%
@@ -49,7 +50,7 @@ distinct_stations
 
 ```
 
-##How Many Stations are ADA Compliant
+##How Many Stations are ADA Compliant##
 ```{r}
 ada_compliant_stations <- subway_df %>%
   filter(ada == TRUE) %>%
@@ -60,8 +61,7 @@ ada_compliant_stations
 
 ```
 
-##What proportion of station entrances/exits without vending allow entrance
-There were no station entrances and exits without vending that allow entrance. 
+##Proportion of station entrances/exits without vending allow entrance##
 
 ```{r}
 proportion_entry <- subway_df %>%
@@ -71,6 +71,8 @@ proportion_entry <- subway_df %>%
 proportion_entry
 
 ```
+There were no station entrances and exits without vending that allow entrance.
+
 ```{r}
 subway_df <- subway_df %>%
   mutate(across(starts_with("route"), as.character))
@@ -100,7 +102,7 @@ ada_compliant
 ```
 
 
-##Question 2
+##Question 2##
 
 ```{r}
 library(readxl)
@@ -138,7 +140,7 @@ mutate(year = as.character(year))
 head(gwynndatrashwheel_df, 5)
 ```
 
-##Combining the datasets
+##Combining the datasets##
 ```{r}
 mrtrashwheel_df <- mrtrashwheel_df |> 
   mutate(source = "Mr. Trash Wheel") 
@@ -156,7 +158,7 @@ head(combined_df, 5)
 
 The `combined_df` dataset consists of `r nrow(combined_df)` observations and 15 variables from three datasheets: Mr. Trash Wheel, Gwynnda Trash Wheel, and Professor Trash Wheel. The `Mr. Trash Wheel` dataset has `r nrow(mrtrashwheel_df)`  observations. The `Professor Trash Wheel` dataset has `r nrow(professortrashwheel_df)` observations. The `Gwynnda Trash Wheel` dataset has `r nrow(gwynndatrashwheel_df)` observations. Key variables in this set include the `date` of trash collection, the `weight_tons` which notes the weight of the trash collected, and the contents of what was collected in the trash such as number of `cigarette_butts`. The total weight of trash collected by `Professor Trash Wheel` is `r sum(professortrashwheel_df$weight_tons, na.rm = TRUE)` pounds. In June 2022, `Gwynnda Trash Wheel` collected `r format(sum(gwynndatrashwheel_df$cigarette_butts[gwynndatrashwheel_df$month == "June" & gwynndatrashwheel_df$year == 2022], na.rm = TRUE), big.mark = ",")` cigarette butts. 
 
-##Question 3 
+##Question 3## 
 
 ```{r}
 library(readxl)
@@ -197,5 +199,11 @@ head(combined_df, 5)
   
 ```
 
-##Data Cleaning Process
-I cleaned the data by first reading in the data files and cleaned the variable names. For the bakers_df I removed the columns that corresponded to baker age, baker occupation, and hometown.I also renamed the baker_name variable to baker because the other two datasets had the name as baker. For bakes_df, I relocated baker column so that it was the first column. i then removed signature bake and show stopper since they were not relevant. For results_df, I skipped the first two rows since they did not contain any information and the column names started on the third row. I also relocated the baker column to be first. I then mutated the result variable so that if the column said Winner or Star Baker, then it was coded as True, or else it was coded as false. This made it easier to create a table showing star baker/winner of season 5.I merged the datasets with left_join. i first joined the bakes and results datasets as they shared baker, series, and episode variables in common. I then merged this with bakers  
+##Data Cleaning Process##
+I cleaned the data by first reading in the data files and cleaned the variable names. For the bakers_df I removed the columns that corresponded to baker age, baker occupation, and hometown.I also renamed the baker_name variable to baker because the other two datasets had the name as baker. For bakes_df, I relocated baker column so that it was the first column. i then removed signature bake and show stopper since they were not relevant. For results_df, I skipped the first two rows since they did not contain any information and the column names started on the third row. I also relocated the baker column to be first. I then mutated the result variable so that if the column said Winner or Star Baker, then it was coded as True, or else it was coded as false. This made it easier to create a table showing star baker/winner of season 5.I merged the datasets with left_join. i first joined the bakes and results datasets as they shared baker, series, and episode variables in common. I then merged this with bakers_df by baker and series. I selected the column names in order of appearance. This yielded a dataset that contained information on the baker name, series they appeared in, episode they appeared in, number of technical challenges, and the results of the episode. 
+
+##Exporting the Data##
+```{r}
+write_csv(combined_df, "./data/combined_df.csv")
+```
+
