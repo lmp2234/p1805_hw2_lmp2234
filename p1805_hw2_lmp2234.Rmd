@@ -246,6 +246,9 @@ head(newviewers_df, 10)
 viewership_season_1 <- newviewers_df %>%
   filter(series == "series_1") %>%
   summarise(viewership_season_1 = mean(value, na.rm = TRUE))
+
+viewership_season_1
+
 ```
 
 **Average Viewership for Season 5**
@@ -253,5 +256,7 @@ viewership_season_1 <- newviewers_df %>%
 viewership_season_5 <- newviewers_df %>%
   filter(series == "series_5") %>%
   summarise(viewership_season_5 = mean(value, na.rm = TRUE))
+
+viewership_season_5
 ```
 
