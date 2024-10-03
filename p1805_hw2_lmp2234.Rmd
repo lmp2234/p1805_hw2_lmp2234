@@ -61,6 +61,7 @@ ada_compliant_stations
 ```
 
 ##What proportion of station entrances/exits without vending allow entrance
+There were no station entrances and exits without vending that allow entrance. 
 
 ```{r}
 proportion_entry <- subway_df %>%
@@ -150,31 +151,51 @@ gwynndatrashwheel_df <- gwynndatrashwheel_df |>
 
 combined_df = bind_rows(mrtrashwheel_df, professortrashwheel_df, gwynndatrashwheel_df)
 
-combined_df
+head(combined_df, 5)
 ```
 
 The `combined_df` dataset consists of `r nrow(combined_df)` observations and 15 variables from three datasheets: Mr. Trash Wheel, Gwynnda Trash Wheel, and Professor Trash Wheel. The `Mr. Trash Wheel` dataset has `r nrow(mrtrashwheel_df)`  observations. The `Professor Trash Wheel` dataset has `r nrow(professortrashwheel_df)` observations. The `Gwynnda Trash Wheel` dataset has `r nrow(gwynndatrashwheel_df)` observations. Key variables in this set include the `date` of trash collection, the `weight_tons` which notes the weight of the trash collected, and the contents of what was collected in the trash such as number of `cigarette_butts`. The total weight of trash collected by `Professor Trash Wheel` is `r sum(professortrashwheel_df$weight_tons, na.rm = TRUE)` pounds. In June 2022, `Gwynnda Trash Wheel` collected `r format(sum(gwynndatrashwheel_df$cigarette_butts[gwynndatrashwheel_df$month == "June" & gwynndatrashwheel_df$year == 2022], na.rm = TRUE), big.mark = ",")` cigarette butts. 
 
 ##Question 3 
 
-
-
 ```{r}
+library(readxl)
 
 bakers_df <- read_csv("./data/bakers.csv") %>%
   janitor::clean_names() %>%
-  rename(baker = baker_name)
-
+  rename(baker = baker_name) %>%
+  select(-baker_age,-baker_occupation, -hometown)
+  
 bakes_df <- read_csv("./data/bakes.csv") %>%
-  janitor::clean_names()
+  janitor::clean_names() %>%
+  relocate(baker)%>%
+  select(-signature_bake, -show_stopper)
 
 results_df <- read_csv("./data/results.csv", skip = 2) %>%
-  janitor::clean_names()
+  janitor::clean_names() %>%
+  relocate(baker) %>%
+  mutate(result = ifelse(result %in% c("Winner", "Star Baker"), "TRUE", "FALSE")) 
 
 head(bakers_df, 5)
 head(bakes_df, 5)
 head(results_df, 5)
 
+missing_bakes <- anti_join(bakes_df, bakers_df, by = "baker")
+missing_results <- anti_join(results_df, bakers_df, by = "baker")
+
+print(missing_bakes)
+print(missing_results)
 
 
+combined_df <- bakes_df%>%
+left_join(results_df, by = c("baker", "series", "episode"))%>%
+left_join(bakers_df, by = c("baker","series"))%>%
+select (baker, series, episode, technical, result)
 
+head(combined_df, 5)
+
+  
+```
+
+##Data Cleaning Process
+I cleaned the data by first reading in the data files and cleaned the variable names. For the bakers_df I removed the columns that corresponded to baker age, baker occupation, and hometown.I also renamed the baker_name variable to baker because the other two datasets had the name as baker. For bakes_df, I relocated baker column so that it was the first column. i then removed signature bake and show stopper since they were not relevant. For results_df, I skipped the first two rows since they did not contain any information and the column names started on the third row. I also relocated the baker column to be first. I then mutated the result variable so that if the column said Winner or Star Baker, then it was coded as True, or else it was coded as false. This made it easier to create a table showing star baker/winner of season 5.I merged the datasets with left_join. i first joined the bakes and results datasets as they shared baker, series, and episode variables in common. I then merged this with bakers  
